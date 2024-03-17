@@ -1,10 +1,19 @@
 const express = require("express");
 const mongoose = require("mongoose"); // Import mongoose
+const cookieParser = require("cookie-parser");
 const { connectToMongoDB } = require("./connect");
+
+const {
+  restrictedToLoggedinUserOnly,
+  checkAuth,
+} = require("./middlewares/auth");
 const urlRoute = require("./routes/url");
+
 const URL = require("./models/url");
 const staticRoute = require("./routes/staticRouter");
 const path = require("path");
+
+const userRoute = require("./routes/user");
 
 const app = express();
 const PORT = 3000;
@@ -19,9 +28,11 @@ app.set("views", path.resolve("./views"));
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
 
-app.use("/url", urlRoute);
-app.use("/", staticRoute);
+app.use("/url", restrictedToLoggedinUserOnly, urlRoute);
+app.use("/user", userRoute);
+app.use("/", checkAuth, staticRoute);
 
 app.get("/url/:shortId", async (req, res) => {
   const shortId = req.params.shortId;
